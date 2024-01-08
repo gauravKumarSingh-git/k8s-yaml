@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+ name: blood-bank
+spec:
+ replicas: 2
+ selector: 
+  matchLabels:
+   app: blood-bank
+ template:
+  metadata: 
+   labels:
+    app: blood-bank
+  spec: 
+   containers:
+   - name: blood-bank
+     image: blood-bank-k8s:1.1
+     imagePullPolicy: IfNotPresent
+     env: 
+      - name: spring.profiles.active
+        value: dev
+      - name: secret
+        valueFrom: 
+          secretKeyRef:
+            name: postgres-credentials
+            key: secret
+      - name: password
+        valueFrom: 
+          secretKeyRef:
+            name: postgres-credentials
+            key: password
+      - name: email
+        valueFrom: 
+          secretKeyRef:
+            name: postgres-credentials
+            key: email
+      - name: DB_HOST
+        valueFrom:
+          configMapKeyRef:
+            name: postgres-conf
+            key: host
+      - name: DB_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: postgres-conf
+            key: name
+     ports: 
+      - containerPort: 9090  
+
+---
+
+apiVersion: v1
+kind: Service
+metadata: 
+  name: springboot-k8s
+  labels: 
+    name: springboot-k8s
+spec: 
+  ports: 
+    - nodePort: 30163
+      port: 9090
+      targetPort: 9090
+      protocol: TCP
+  selector: 
+    app: springboot-k8s
+  type: NodePort
+     
